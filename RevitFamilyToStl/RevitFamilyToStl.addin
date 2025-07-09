@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Command">
+    <Name>Create Family Instance and Export STL</Name>
+    <Assembly>c:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\x64\Debug\RevitFamilyToStl.dll</Assembly>
+    <AddInId>a7a5f414-3569-474f-875b-1c6b319c7d35</AddInId>
+    <FullClassName>RevitFamilyToStl.Command</FullClassName>
+    <VendorId>Cascade</VendorId>
+    <VendorDescription>AI Coding Assistant</VendorDescription>
+    <Text>Creates an instance of a specific family and exports it to an STL file.</Text>
+  </AddIn>
+</RevitAddIns>

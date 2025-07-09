@@ -1,0 +1,25 @@
+--- Available Family Parameters ---
+- Default Elevation
+- Type Image
+- Keynote
+- Category
+- Category
+- Type IFC Predefined Type
+- Export Type to IFC As
+- Export Type to IFC
+- Type IfcGUID
+- Design Option
+- Model
+- Manufacturer
+- Type Comments
+- URL
+- Description
+- Code Name
+- Classification Title
+- Classification Number
+- Assembly Description
+- Assembly Code
+- Family Name
+- Type Name
+- Type Mark
+- Cost

@@ -1,0 +1,9 @@
+C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\Debug\RevitFamilyToStl.dll
+C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\Debug\RevitFamilyToStl.pdb
+C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\obj\x64\Debug\RevitFamilyToStl.csproj.AssemblyReference.cache
+C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\obj\x64\Debug\RevitFamilyToStl.csproj.CoreCompileInputs.cache
+C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\obj\x64\Debug\RevitFamilyToStl.dll
+C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\obj\x64\Debug\RevitFamilyToStl.pdb
+C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\x64\Debug\RevitFamilyToStl.dll
+C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\x64\Debug\RevitFamilyToStl.pdb
+C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\x64\Debug\3X8X_panel_v1_2025_06_26.rfa

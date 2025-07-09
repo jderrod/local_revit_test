@@ -1,0 +1,2 @@
+C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\obj\Debug\RevitFamilyToStl.csproj.AssemblyReference.cache
+C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\obj\Debug\RevitFamilyToStl.csproj.CoreCompileInputs.cache
