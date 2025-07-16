@@ -6,7 +6,7 @@ import os
 
 # --- Configuration ---
 stl_file_path = os.path.join(
-    'RevitFamilyToStl', 'bin', 'x64', 'Debug', 'output.stl'
+    'RevitFamilyToStl', 'bin', 'x64', 'Debug', 'output', 'panel_instance.stl'
 )
 
 # --- Main Script ---

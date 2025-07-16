@@ -6,4 +6,7 @@ C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\obj\x64\Debug\RevitFamil
 C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\obj\x64\Debug\RevitFamilyToStl.pdb
 C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\x64\Debug\RevitFamilyToStl.dll
 C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\x64\Debug\RevitFamilyToStl.pdb
-C:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\x64\Debug\3X8X_panel_v1_2025_06_26.rfa
+c:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\x64\Debug\input\3X8X_panel_v1_2025_06_26.rfa
+c:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\x64\Debug\Newtonsoft.Json.dll
+c:\Users\james.derrod\local_revit_test\RevitFamilyToStl\obj\x64\Debug\RevitFam.89CA71AE.Up2Date
+c:\Users\james.derrod\local_revit_test\RevitFamilyToStl\bin\x64\Debug\input\panel_template_1.json

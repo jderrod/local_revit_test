@@ -1,0 +1,61 @@
+{
+  "format": 1,
+  "restore": {
+    "c:\\Users\\james.derrod\\local_revit_test\\RevitFamilyToStl\\RevitFamilyToStl.csproj": {}
+  },
+  "projects": {
+    "c:\\Users\\james.derrod\\local_revit_test\\RevitFamilyToStl\\RevitFamilyToStl.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "c:\\Users\\james.derrod\\local_revit_test\\RevitFamilyToStl\\RevitFamilyToStl.csproj",
+        "projectName": "RevitFamilyToStl",
+        "projectPath": "c:\\Users\\james.derrod\\local_revit_test\\RevitFamilyToStl\\RevitFamilyToStl.csproj",
+        "packagesPath": "C:\\Users\\james.derrod\\.nuget\\packages\\",
+        "outputPath": "c:\\Users\\james.derrod\\local_revit_test\\RevitFamilyToStl\\obj\\",
+        "projectStyle": "PackageReference",
+        "skipContentFileWrite": true,
+        "UsingMicrosoftNETSdk": false,
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\james.derrod\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net48"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net48": {
+            "projectReferences": {}
+          }
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net48": {
+          "dependencies": {
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            }
+          }
+        }
+      },
+      "runtimes": {
+        "win": {
+          "#import": []
+        }
+      }
+    }
+  }
+}

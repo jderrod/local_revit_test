@@ -1,0 +1,10 @@
+{
+  "panel_height": 80.0,
+  "panel_width": 60.0,
+  "panel_floor_clearance": 1.0,
+  "panel_inline_left_side": true,
+  "panel_inline_right_side": false,
+  "panel_work_order_number": "ABCDE1234567",
+  "panel_component_id": "1234",
+  "panel_series_id": "3082G"
+}

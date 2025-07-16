@@ -1,9 +1,13 @@
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 
 namespace RevitFamilyToStl
 {
@@ -12,158 +16,193 @@ namespace RevitFamilyToStl
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            UIApplication uiApp = commandData.Application;
-            Document doc = uiApp.ActiveUIDocument.Document;
+            var uiApp = commandData.Application;
+            var uiDoc = uiApp.ActiveUIDocument;
+            var doc = uiDoc.Document;
 
-            string assemblyLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            string familyPath = Path.Combine(assemblyLocation, "3X8X_panel_v1_2025_06_26.rfa");
-            string stlExportPath = Path.Combine(assemblyLocation, "output.stl");
-            string csvExportPath = Path.Combine(assemblyLocation, "instance_parameters.csv");
+            var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var inputDir = Path.Combine(assemblyLocation, "input");
+            var outputDir = Path.Combine(assemblyLocation, "output");
+            Directory.CreateDirectory(outputDir); // Ensure output directory exists
 
-            if (!File.Exists(familyPath))
-            {
-                message = "Family file not found at: " + familyPath;
-                TaskDialog.Show("Error", message);
-                return Result.Failed;
-            }
+            var jsonFilePath = Path.Combine(inputDir, "panel_template_1.json");
+            var familyFilePath = Path.Combine(inputDir, "3X8X_panel_v1_2025_06_26.rfa");
+            var stlFilePath = Path.Combine(outputDir, "panel_instance.stl");
+            var csvFilePath = Path.Combine(outputDir, "instance_parameters.csv"); // Corrected filename
 
-            // --- Get User Input ---
-            double panelHeightInches, panelWidthInches;
-            int floorClearanceSelector;
-            bool isInlineLeft, isInlineRight;
-            string workOrderNumber, componentId, seriesId;
-
-            using (var form = new ParameterInputForm())
-            {
-                if (form.ShowDialog() != System.Windows.Forms.DialogResult.OK)
-                {
-                    return Result.Cancelled;
-                }
-
-                if (!double.TryParse(form.PanelHeightValue, out panelHeightInches) ||
-                    !double.TryParse(form.PanelWidthValue, out panelWidthInches))
-                {
-                    message = "Invalid numeric input for Height or Width.";
-                    TaskDialog.Show("Error", message);
-                    return Result.Failed;
-                }
-
-                floorClearanceSelector = form.FloorClearanceSelectorValue;
-                isInlineLeft = form.IsInlineLeft;
-                isInlineRight = form.IsInlineRight;
-                workOrderNumber = form.WorkOrderNumber;
-                componentId = form.ComponentId;
-                seriesId = form.SeriesId;
-            }
+            if (!File.Exists(jsonFilePath)) { message = "JSON input file not found."; return Result.Failed; }
+            if (!File.Exists(familyFilePath)) { message = "RFA family file not found."; return Result.Failed; }
 
             FamilyInstance instance = null;
-            using (Transaction trans = new Transaction(doc, "Create and Modify Family Instance"))
-            {
-                trans.Start();
-
-                Family family;
-                if (!doc.LoadFamily(familyPath, out family))
-                {
-                    message = "Could not load the family.";
-                    TaskDialog.Show("Error", message);
-                    trans.RollBack();
-                    return Result.Failed;
-                }
-
-                FamilySymbol familySymbol = doc.GetElement(family.GetFamilySymbolIds().First()) as FamilySymbol;
-                if (!familySymbol.IsActive) { familySymbol.Activate(); }
-
-                Level level = new FilteredElementCollector(doc).OfClass(typeof(Level)).FirstElement() as Level;
-                if (level == null) { /* error handling */ return Result.Failed; }
-
-                instance = doc.Create.NewFamilyInstance(XYZ.Zero, familySymbol, level, Autodesk.Revit.DB.Structure.StructuralType.NonStructural);
-                doc.Regenerate();
-
-                // Set parameters from form input
-                SetParameter(instance, "panel_height_desired", panelHeightInches / 12.0); // to feet
-                SetParameter(instance, "panel_width_desired", panelWidthInches / 12.0); // to feet
-                // panel_thickness is read-only
-                SetParameter(instance, "panel_floor_clearance_selector", floorClearanceSelector);
-                SetParameter(instance, "panel_inline_left_side", isInlineLeft ? 1 : 0); // bool to int
-                SetParameter(instance, "panel_inline_right_side", isInlineRight ? 1 : 0); // bool to int
-                SetParameter(instance, "panel_work_order_number", workOrderNumber);
-                SetParameter(instance, "panel_component_id", componentId);
-                SetParameter(instance, "panel_series_id", seriesId);
-                
-                trans.Commit();
-            }
-
-            // --- Export to CSV and STL ---
-            ExportParametersToCsv(instance, csvExportPath);
-            ExportInstanceToStl(instance, stlExportPath, ref message);
-
-            TaskDialog.Show("Success", $"Instance created. STL and CSV exported to:\n{assemblyLocation}");
-            return Result.Succeeded;
-        }
-
-        private void SetParameter(FamilyInstance instance, string name, object value)
-        {
-            Parameter param = instance.LookupParameter(name);
-            if (param != null && !param.IsReadOnly)
-            {
-                try
-                {
-                    if (value is double d) param.Set(d);
-                    else if (value is int i) param.Set(i);
-                    else if (value is string s) param.Set(s);
-                }
-                catch (Exception ex)
-                {
-                    TaskDialog.Show("Parameter Error", $"Could not set '{name}' to '{value}'. Error: {ex.Message}");
-                }
-            }
-            else
-            {
-                TaskDialog.Show("Warning", $"Could not find or access parameter: '{name}'.");
-            }
-        }
-
-        private void ExportParametersToCsv(FamilyInstance instance, string path)
-        {
-            try
-            {
-                var csv = new System.Text.StringBuilder();
-                csv.AppendLine("Parameter Name,Parameter Value");
-                foreach (Parameter p in instance.Parameters.Cast<Parameter>().OrderBy(p => p.Definition.Name))
-                {
-                    string val = p.AsValueString() ?? p.AsString() ?? "(No Value)";
-                    if (val.Contains(",")) val = $"\"{val}\"";
-                    csv.AppendLine($"{p.Definition.Name},{val}");
-                }
-                File.WriteAllText(path, csv.ToString());
-            }
-            catch { /* Silent fail or log */ }
-        }
-
-        private bool ExportInstanceToStl(FamilyInstance instance, string path, ref string message)
-        {
-            Document doc = instance.Document;
-            View3D view = new FilteredElementCollector(doc).OfClass(typeof(View3D)).Cast<View3D>().FirstOrDefault(v => !v.IsTemplate);
-            if (view == null)
-            {
-                message = "No 3D view found for STL export.";
-                return false;
-            }
+            ElementId instanceId = null;
 
             try
             {
-                var options = new STLExportOptions { ViewId = view.Id };
-                string dir = Path.GetDirectoryName(path);
-                string name = Path.GetFileName(path);
-                Directory.CreateDirectory(dir);
-                doc.Export(dir, name, options);
-                return true;
+                // ===== Main Transaction: Create Instance and Set Parameters =====
+                using (var t1 = new Transaction(doc, "Create Panel Instance"))
+                {
+                    t1.Start();
+
+                    var family = LoadAndGetFamily(doc, familyFilePath);
+                    if (family == null) { message = "Could not load or find family."; t1.RollBack(); return Result.Failed; }
+
+                    var symbol = doc.GetElement(family.GetFamilySymbolIds().First()) as FamilySymbol;
+                    if (!symbol.IsActive) { symbol.Activate(); doc.Regenerate(); }
+
+                    instance = doc.Create.NewFamilyInstance(XYZ.Zero, symbol, Autodesk.Revit.DB.Structure.StructuralType.NonStructural);
+                    doc.Regenerate();
+
+                    var panelData = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(jsonFilePath));
+                    SetParameters(instance, panelData);
+                    doc.Regenerate();
+
+                    instanceId = instance.Id; // Store the ID for later use
+                    t1.Commit();
+                }
+
+                // ===== Post-Transaction: File I/O and Exports =====
+                // Re-fetch the instance outside the transaction to ensure it's valid
+                instance = doc.GetElement(instanceId) as FamilyInstance;
+                if (instance == null) { throw new InvalidOperationException("Failed to retrieve the created instance after transaction."); }
+
+                // Delete old files to ensure they are overwritten
+                if (File.Exists(stlFilePath)) File.Delete(stlFilePath);
+                if (File.Exists(csvFilePath)) File.Delete(csvFilePath);
+
+                ExportToStl(doc, instance, stlFilePath);
+                ExportToCsv(instance, csvFilePath);
+
+                // ===== Cleanup Transaction: Delete the Instance =====
+                using (var t2 = new Transaction(doc, "Delete Panel Instance"))
+                {
+                    t2.Start();
+                    doc.Delete(instance.Id);
+                    t2.Commit();
+                }
+
+                TaskDialog.Show("Success", "Panel created and exported successfully.");
+                return Result.Succeeded;
             }
             catch (Exception ex)
             {
-                message = "Failed to export STL: " + ex.Message;
-                return false;
+                message = $"An error occurred: {ex.ToString()}";
+                // If an error occurred, try to clean up the instance if it was created
+                if (instanceId != null && doc.GetElement(instanceId) != null)
+                {
+                    using (var tCleanup = new Transaction(doc, "Error Cleanup"))
+                    {
+                        tCleanup.Start();
+                        doc.Delete(instanceId);
+                        tCleanup.Commit();
+                    }
+                }
+                TaskDialog.Show("Error", message);
+                return Result.Failed;
             }
+        }
+
+        private Family LoadAndGetFamily(Document doc, string familyFilePath)
+        {
+            if (doc.LoadFamily(familyFilePath, out var family))
+            {
+                return family;
+            }
+            return new FilteredElementCollector(doc).OfClass(typeof(Family)).FirstOrDefault(f => f.Name == Path.GetFileNameWithoutExtension(familyFilePath)) as Family;
+        }
+
+        private void SetParameters(FamilyInstance instance, Dictionary<string, object> parameters)
+        {
+            foreach (var item in parameters)
+            {
+                string paramName = item.Key;
+                // Remap height and width to the correct 'desired' parameters in the family
+                if (paramName == "panel_height") paramName = "panel_height_desired";
+                if (paramName == "panel_width") paramName = "panel_width_desired";
+
+                var p = instance.LookupParameter(paramName);
+                if (p != null && !p.IsReadOnly)
+                {
+                    // Convert inches from JSON to internal feet units for Revit
+                    if (p.StorageType == StorageType.Double && (paramName.Contains("height") || paramName.Contains("width") || paramName.Contains("clearance")))
+                    {
+                        p.Set(UnitUtils.ConvertToInternalUnits(Convert.ToDouble(item.Value), UnitTypeId.Inches));
+                    }
+                    else if (p.StorageType == StorageType.Integer)
+                    {
+                        p.Set(Convert.ToInt32(item.Value));
+                    }
+                    else if (p.StorageType == StorageType.String)
+                    {
+                        p.Set(item.Value.ToString());
+                    }
+                }
+            }
+
+            // Handle special floor clearance logic
+            if (parameters.TryGetValue("panel_floor_clearance_selector", out var clearanceValue))
+            {
+                var selector = Convert.ToInt32(clearanceValue);
+                string[] clearanceParams = { "1\"_clearance", "4.5\"_clearance", "9\"_clearance", "12\"_clearance" };
+                for (int i = 0; i < clearanceParams.Length; i++)
+                {
+                    var p = instance.LookupParameter(clearanceParams[i]);
+                    if (p != null) p.Set(i + 1 == selector ? 1 : 0);
+                }
+            }
+        }
+
+        private void ExportToStl(Document doc, FamilyInstance instance, string filePath)
+        {
+            var view = new FilteredElementCollector(doc).OfClass(typeof(View3D)).Cast<View3D>().FirstOrDefault(v => !v.IsTemplate);
+            if (view == null) throw new InvalidOperationException("No 3D view found for STL export.");
+
+            var exportOptions = new STLExportOptions { ViewId = view.Id };
+
+            // View isolation is a model modification and requires a transaction.
+            using (var t = new Transaction(doc, "Isolate for STL Export"))
+            {
+                t.Start();
+                using (var tempViewIsolation = new TemporaryViewModeDisabler(view))
+                {
+                    view.IsolateElementsTemporary(new List<ElementId> { instance.Id });
+                    // The export must happen while the view is isolated.
+                    doc.Export(Path.GetDirectoryName(filePath), Path.GetFileName(filePath), exportOptions);
+                }
+                t.Commit();
+            }
+        }
+
+        private void ExportToCsv(FamilyInstance instance, string filePath)
+        {
+            var csv = new StringBuilder();
+            csv.AppendLine("Parameter Name,Parameter Value");
+
+            foreach (Parameter param in instance.Parameters)
+            {
+                if (param == null || !param.HasValue) continue;
+                var name = param.Definition.Name;
+                string value;
+                if (param.StorageType == StorageType.Double)
+                {
+                    value = param.AsValueString() ?? UnitUtils.ConvertFromInternalUnits(param.AsDouble(), param.GetUnitTypeId()).ToString();
+                }
+                else
+                {
+                    value = param.AsValueString() ?? param.AsString() ?? "(No Value)";
+                }
+                csv.AppendLine($"{Quote(name)},{Quote(value)}");
+            }
+
+            File.WriteAllText(filePath, csv.ToString());
+        }
+
+        private string Quote(string s) => $"\"{s.Replace("\"", "\"\"")}\"";
+
+        private class TemporaryViewModeDisabler : IDisposable
+        {
+            private readonly View _view;
+            public TemporaryViewModeDisabler(View view) { _view = view; }
+            public void Dispose() { _view.DisableTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate); }
         }
     }
 }
