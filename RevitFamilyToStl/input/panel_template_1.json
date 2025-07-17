@@ -1,10 +1,26 @@
 {
-  "panel_height": 80.0,
-  "panel_width": 60.0,
-  "panel_floor_clearance": 1.0,
-  "panel_inline_left_side": true,
-  "panel_inline_right_side": false,
-  "panel_work_order_number": "ABCDE1234567",
-  "panel_component_id": "1234",
-  "panel_series_id": "3082G"
+  "panels": [
+    {
+      "panel_id": "A1",
+      "panel_height": 80.0,
+      "panel_width": 60.0,
+      "panel_floor_clearance": 1.0,
+      "panel_inline_left_side": true,
+      "panel_inline_right_side": false,
+      "panel_work_order_number": "ABCDE1234567",
+      "panel_component_id": "1234",
+      "panel_series_id": "3082G"
+    },
+    {
+      "panel_id": "A2",
+      "panel_height": 72.0,
+      "panel_width": 48.0,
+      "panel_floor_clearance": 4.5,
+      "panel_inline_left_side": false,
+      "panel_inline_right_side": true,
+      "panel_work_order_number": "FGHIJ890123",
+      "panel_component_id": "5678",
+      "panel_series_id": "3082G"
+    }
+  ]
 }

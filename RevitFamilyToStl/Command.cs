@@ -11,6 +11,12 @@ using System.Text;
 
 namespace RevitFamilyToStl
 {
+    public class JsonInput
+    {
+        [JsonProperty("panels")]
+        public List<Dictionary<string, object>> Panels { get; set; }
+    }
+
     [Transaction(TransactionMode.Manual)]
     public class Command : IExternalCommand
     {
@@ -23,91 +29,115 @@ namespace RevitFamilyToStl
             var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var inputDir = Path.Combine(assemblyLocation, "input");
             var outputDir = Path.Combine(assemblyLocation, "output");
-            Directory.CreateDirectory(outputDir); // Ensure output directory exists
+            Directory.CreateDirectory(outputDir);
 
             var jsonFilePath = Path.Combine(inputDir, "panel_template_1.json");
             var familyFilePath = Path.Combine(inputDir, "3X8X_panel_v1_2025_06_26.rfa");
-            var stlFilePath = Path.Combine(outputDir, "panel_instance.stl");
-            var csvFilePath = Path.Combine(outputDir, "instance_parameters.csv"); // Corrected filename
 
             if (!File.Exists(jsonFilePath)) { message = "JSON input file not found."; return Result.Failed; }
             if (!File.Exists(familyFilePath)) { message = "RFA family file not found."; return Result.Failed; }
 
-            FamilyInstance instance = null;
-            ElementId instanceId = null;
-
             try
             {
-                // ===== Main Transaction: Create Instance and Set Parameters =====
-                using (var t1 = new Transaction(doc, "Create Panel Instance"))
+                var jsonText = File.ReadAllText(jsonFilePath);
+                var jsonInput = JsonConvert.DeserializeObject<JsonInput>(jsonText);
+                if (jsonInput?.Panels == null || !jsonInput.Panels.Any())
                 {
-                    t1.Start();
-
-                    var family = LoadAndGetFamily(doc, familyFilePath);
-                    if (family == null) { message = "Could not load or find family."; t1.RollBack(); return Result.Failed; }
-
-                    var symbol = doc.GetElement(family.GetFamilySymbolIds().First()) as FamilySymbol;
-                    if (!symbol.IsActive) { symbol.Activate(); doc.Regenerate(); }
-
-                    instance = doc.Create.NewFamilyInstance(XYZ.Zero, symbol, Autodesk.Revit.DB.Structure.StructuralType.NonStructural);
-                    doc.Regenerate();
-
-                    var panelData = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(jsonFilePath));
-                    SetParameters(instance, panelData);
-                    doc.Regenerate();
-
-                    instanceId = instance.Id; // Store the ID for later use
-                    t1.Commit();
+                    message = "No panels found in JSON input.";
+                    return Result.Failed;
                 }
 
-                // ===== Post-Transaction: File I/O and Exports =====
-                // Re-fetch the instance outside the transaction to ensure it's valid
-                instance = doc.GetElement(instanceId) as FamilyInstance;
-                if (instance == null) { throw new InvalidOperationException("Failed to retrieve the created instance after transaction."); }
+                FamilySymbol symbol = LoadAndGetFamilySymbol(doc, familyFilePath);
+                if (symbol == null) { message = "Could not load or find family symbol."; return Result.Failed; }
 
-                // Delete old files to ensure they are overwritten
-                if (File.Exists(stlFilePath)) File.Delete(stlFilePath);
-                if (File.Exists(csvFilePath)) File.Delete(csvFilePath);
-
-                ExportToStl(doc, instance, stlFilePath);
-                ExportToCsv(instance, csvFilePath);
-
-                // ===== Cleanup Transaction: Delete the Instance =====
-                using (var t2 = new Transaction(doc, "Delete Panel Instance"))
+                foreach (var panelData in jsonInput.Panels)
                 {
-                    t2.Start();
-                    doc.Delete(instance.Id);
-                    t2.Commit();
+                    ElementId instanceId = null;
+                    try
+                    {
+                        string panelId = panelData.ContainsKey("panel_id") ? panelData["panel_id"].ToString() : Guid.NewGuid().ToString();
+                        var stlFilePath = Path.Combine(outputDir, $"{panelId}.stl");
+                        var csvFilePath = Path.Combine(outputDir, $"{panelId}_parameters.csv");
+
+                        // ===== Create Instance Transaction =====
+                        FamilyInstance instance;
+                        using (var t1 = new Transaction(doc, $"Create Panel {panelId}"))
+                        {
+                            t1.Start();
+                            instance = doc.Create.NewFamilyInstance(XYZ.Zero, symbol, Autodesk.Revit.DB.Structure.StructuralType.NonStructural);
+                            doc.Regenerate();
+                            SetParameters(instance, panelData);
+                            doc.Regenerate();
+                            instanceId = instance.Id;
+                            t1.Commit();
+                        }
+
+                        // ===== Post-Transaction Exports =====
+                        instance = doc.GetElement(instanceId) as FamilyInstance;
+                        if (instance == null) throw new InvalidOperationException($"Failed to retrieve instance {panelId}.");
+
+                        if (File.Exists(stlFilePath)) File.Delete(stlFilePath);
+                        if (File.Exists(csvFilePath)) File.Delete(csvFilePath);
+
+                        ExportToStl(doc, instance, stlFilePath);
+                        ExportToCsv(instance, csvFilePath);
+                    }
+                    finally
+                    {
+                        // ===== Cleanup Transaction =====
+                        if (instanceId != null && doc.GetElement(instanceId) != null)
+                        {
+                            using (var t2 = new Transaction(doc, $"Delete Panel {instanceId}"))
+                            {
+                                t2.Start();
+                                doc.Delete(instanceId);
+                                t2.Commit();
+                            }
+                        }
+                    }
                 }
 
-                TaskDialog.Show("Success", "Panel created and exported successfully.");
+                TaskDialog.Show("Success", $"{jsonInput.Panels.Count} panels processed successfully.");
                 return Result.Succeeded;
             }
             catch (Exception ex)
             {
                 message = $"An error occurred: {ex.ToString()}";
-                // If an error occurred, try to clean up the instance if it was created
-                if (instanceId != null && doc.GetElement(instanceId) != null)
-                {
-                    using (var tCleanup = new Transaction(doc, "Error Cleanup"))
-                    {
-                        tCleanup.Start();
-                        doc.Delete(instanceId);
-                        tCleanup.Commit();
-                    }
-                }
                 TaskDialog.Show("Error", message);
                 return Result.Failed;
             }
         }
 
-        private Family LoadAndGetFamily(Document doc, string familyFilePath)
+        private FamilySymbol LoadAndGetFamilySymbol(Document doc, string familyFilePath)
         {
-            if (doc.LoadFamily(familyFilePath, out var family))
+            Family family = new FilteredElementCollector(doc).OfClass(typeof(Family)).FirstOrDefault(f => f.Name == Path.GetFileNameWithoutExtension(familyFilePath)) as Family;
+
+            if (family == null)
             {
-                return family;
+                using (var t = new Transaction(doc, "Load Family"))
+                {
+                    t.Start();
+                    if (!doc.LoadFamily(familyFilePath, out family))
+                    {
+                        t.RollBack();
+                        return null;
+                    }
+                    t.Commit();
+                }
             }
-            return new FilteredElementCollector(doc).OfClass(typeof(Family)).FirstOrDefault(f => f.Name == Path.GetFileNameWithoutExtension(familyFilePath)) as Family;
+
+            var symbol = doc.GetElement(family.GetFamilySymbolIds().First()) as FamilySymbol;
+            if (symbol != null && !symbol.IsActive)
+            {
+                using (var t = new Transaction(doc, "Activate Symbol"))
+                {
+                    t.Start();
+                    symbol.Activate();
+                    doc.Regenerate();
+                    t.Commit();
+                }
+            }
+            return symbol;
         }
 
         private void SetParameters(FamilyInstance instance, Dictionary<string, object> parameters)
