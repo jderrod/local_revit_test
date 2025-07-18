@@ -1,0 +1,21 @@
+Parameter Name,Storage Type,Is Read-Only
+Image",ElementId,False
+IFC Predefined Type",String,False
+Export to IFC As",String,False
+Export to IFC",Integer,False
+IfcGUID",String,False
+Phase Demolished",ElementId,False
+Phase Created",ElementId,False
+Comments",String,False
+Family and Type",ElementId,False
+Family",ElementId,False
+Type",ElementId,False
+Moves With Nearby Elements",Integer,False
+Offset from Host",Double,False
+Elevation from Level",Double,False
+Mark",String,False
+door_swing_direction_out",Integer,False
+door_hinge_side_relative_to_room_right",Integer,False
+door_floor_clearance_desired",Double,False
+door_width_desired",Double,False
+door_height_desired",Double,False

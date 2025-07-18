@@ -1,0 +1,85 @@
+Parameter Name,Value,Storage Type,Is Read-Only
+"Image","-1",ElementId,False
+"Category","Specialty Equipment",ElementId,True
+"Category","Specialty Equipment",ElementId,True
+"Panel","",String,True
+"Circuit Number","",String,True
+"IFC Predefined Type","null",String,False
+"Export to IFC As","null",String,False
+"Export to IFC","By Type",Integer,False
+"IfcGUID","2$bmgUuT97RBUsw_7GlpNh",String,False
+"Design Option","-1",ElementId,True
+"Volume","1.31 CF",Double,True
+"Area","22 SF",Double,True
+"Phase Demolished","None",ElementId,False
+"Phase Created","New Construction",ElementId,False
+"Comments","null",String,False
+"Host Id","-1",ElementId,True
+"Level","-1",ElementId,True
+"Family and Type","3X8X_door_v5_2025_07_16: 3086G",ElementId,False
+"Family","3X8X_door_v5_2025_07_16",ElementId,False
+"Type","3086G",ElementId,False
+"Family Name","null",String,True
+"Type Name","null",String,True
+"Type Id","1242383",ElementId,True
+"Moves With Nearby Elements","No",Integer,False
+"Offset from Host","0' - 0""",Double,False
+"Host","None",String,True
+"Elevation from Level","0' - 0""",Double,False
+"Mark","null",String,False
+"panel_component_id","",String,False
+"door_height","7' - 0""",Double,True
+"door_width","3' - 0""",Double,True
+"door_thickness","0' - 0 3/4""",Double,True
+"door_floor_clearance","0' - 1""",Double,True
+"door_swing_direction","out",String,True
+"door_hinge_side_relative_to_room","Right",String,True
+"door_wall_post_hinging","Yes",Integer,False
+"door_wall_keep_latching","Yes",Integer,False
+"door_work_order_number","",String,False
+"door_drilling_face","Out",String,True
+"door_component_id","",String,False
+"door_drilling_side_relative_to_room","Right",String,True
+"door_exterior_left_routing","No",Integer,True
+"door_exterior_right_routing","No",Integer,True
+"door_function_left","Keeping",String,True
+"door_function_right","Hinging",String,True
+"door_hole_bottom_hinge_hole_1_x_coor_from_door_hinge_edge","0' - 0 31/32""",Double,True
+"door_hole_bottom_hinge_hole_1_y_coor_from_door_top_edge","6' - 5 1/2""",Double,True
+"door_hole_bottom_hinge_hole_2_x_coor_from_door_hinge_edge","0' - 0 31/32""",Double,True
+"door_hole_bottom_hinge_hole_2_y_coor_from_door_top_edge","6' - 7 13/16""",Double,True
+"door_hole_mid_bottom_hinge_hole_1_x_coor_from_door_hinge_edge","0' - 0 31/32""",Double,True
+"door_hole_mid_bottom_hinge_hole_1_y_coor_from_door_top_edge","4' - 3 31/32""",Double,True
+"door_hole_mid_bottom_hinge_hole_2_x_coor_from_door_hinge_edge","0' - 0 31/32""",Double,True
+"door_hole_mid_bottom_hinge_hole_2_y_coor_from_door_top_edge","4' - 7 3/32""",Double,True
+"door_hole_mid_top_hinge_hole_1_x_coor_from_door_hinge_edge","0' - 0 31/32""",Double,True
+"door_hole_mid_top_hinge_hole_1_y_coor_from_door_top_edge","2' - 3 1/4""",Double,True
+"door_hole_mid_top_hinge_hole_2_x_coor_from_door_hinge_edge","0' - 0 31/32""",Double,True
+"door_hole_mid_top_hinge_hole_2_y_coor_from_door_top_edge","2' - 5 9/16""",Double,True
+"door_hole_top_hinge_hole_1_x_coor_from_door_hinge_edge","0' - 0 31/32""",Double,True
+"door_hole_top_hinge_hole_1_y_coor_from_door_top_edge","0' - 1 23/32""",Double,True
+"door_hole_top_hinge_hole_2_x_coor_from_door_hinge_edge","0' - 0 31/32""",Double,True
+"door_hole_top_hinge_hole_2_y_coor_from_door_top_edge","0' - 3 7/32""",Double,True
+"door_interior_left_routing","No",Integer,True
+"door_interior_right_routing","Yes",Integer,True
+"door_notching_left_relative_to_room","No",Integer,True
+"door_notching_right_relative_to_room","No",Integer,True
+"door_notching_x_dist","0' - 0 7/16""",Double,True
+"door_notching_y_dist","0' - 3 5/16""",Double,True
+"door_routing_depth","0' - 0 1/2""",Double,True
+"door_routing_width","0' - 0 5/16""",Double,True
+"mid_bottom_hinge_offset","-0' - 1 21/32""",Double,True
+"mid_top_hinge_offset","-0' - 0 13/16""",Double,True
+"door_swing_direction_in","No",Integer,True
+"door_swing_direction_out","Yes",Integer,False
+"door_hinge_side_relative_to_room_left","No",Integer,True
+"door_hinge_side_relative_to_room_right","Yes",Integer,False
+"door_top_margin","0' - 1 23/32""",Double,True
+"door_bottom_margin","0' - 1 23/32""",Double,True
+"hinge_hole_space","0' - 1 1/2""",Double,True
+"inter_hinge_gap","2' - 2 11/32""",Double,True
+"hinge_hole_radius","0' - 0 1/8""",Double,True
+"hinge_hole_diameter","0' - 0 1/4""",Double,True
+"door_floor_clearance_desired","0' - 0 3/4""",Double,False
+"door_width_desired","3' - 0""",Double,False
+"door_height_desired","7' - 0""",Double,False

@@ -1,0 +1,85 @@
+Parameter Name,Storage Type,Is Read-Only
+Image",ElementId,False
+Category",ElementId,True
+Category",ElementId,True
+Panel",String,True
+Circuit Number",String,True
+IFC Predefined Type",String,False
+Export to IFC As",String,False
+Export to IFC",Integer,False
+IfcGUID",String,False
+Design Option",ElementId,True
+Volume",Double,True
+Area",Double,True
+Phase Demolished",ElementId,False
+Phase Created",ElementId,False
+Comments",String,False
+Host Id",ElementId,True
+Level",ElementId,True
+Family and Type",ElementId,False
+Family",ElementId,False
+Type",ElementId,False
+Family Name",String,True
+Type Name",String,True
+Type Id",ElementId,True
+Moves With Nearby Elements",Integer,False
+Offset from Host",Double,False
+Host",String,True
+Elevation from Level",Double,False
+Mark",String,False
+panel_component_id",String,False
+door_height",Double,True
+door_width",Double,True
+door_thickness",Double,True
+door_floor_clearance",Double,True
+door_swing_direction",String,True
+door_hinge_side_relative_to_room",String,True
+door_wall_post_hinging",Integer,False
+door_wall_keep_latching",Integer,False
+door_work_order_number",String,False
+door_drilling_face",String,True
+door_component_id",String,False
+door_drilling_side_relative_to_room",String,True
+door_exterior_left_routing",Integer,True
+door_exterior_right_routing",Integer,True
+door_function_left",String,True
+door_function_right",String,True
+door_hole_bottom_hinge_hole_1_x_coor_from_door_hinge_edge",Double,True
+door_hole_bottom_hinge_hole_1_y_coor_from_door_top_edge",Double,True
+door_hole_bottom_hinge_hole_2_x_coor_from_door_hinge_edge",Double,True
+door_hole_bottom_hinge_hole_2_y_coor_from_door_top_edge",Double,True
+door_hole_mid_bottom_hinge_hole_1_x_coor_from_door_hinge_edge",Double,True
+door_hole_mid_bottom_hinge_hole_1_y_coor_from_door_top_edge",Double,True
+door_hole_mid_bottom_hinge_hole_2_x_coor_from_door_hinge_edge",Double,True
+door_hole_mid_bottom_hinge_hole_2_y_coor_from_door_top_edge",Double,True
+door_hole_mid_top_hinge_hole_1_x_coor_from_door_hinge_edge",Double,True
+door_hole_mid_top_hinge_hole_1_y_coor_from_door_top_edge",Double,True
+door_hole_mid_top_hinge_hole_2_x_coor_from_door_hinge_edge",Double,True
+door_hole_mid_top_hinge_hole_2_y_coor_from_door_top_edge",Double,True
+door_hole_top_hinge_hole_1_x_coor_from_door_hinge_edge",Double,True
+door_hole_top_hinge_hole_1_y_coor_from_door_top_edge",Double,True
+door_hole_top_hinge_hole_2_x_coor_from_door_hinge_edge",Double,True
+door_hole_top_hinge_hole_2_y_coor_from_door_top_edge",Double,True
+door_interior_left_routing",Integer,True
+door_interior_right_routing",Integer,True
+door_notching_left_relative_to_room",Integer,True
+door_notching_right_relative_to_room",Integer,True
+door_notching_x_dist",Double,True
+door_notching_y_dist",Double,True
+door_routing_depth",Double,True
+door_routing_width",Double,True
+mid_bottom_hinge_offset",Double,True
+mid_top_hinge_offset",Double,True
+door_swing_direction_in",Integer,True
+door_swing_direction_out",Integer,False
+door_hinge_side_relative_to_room_left",Integer,True
+door_hinge_side_relative_to_room_right",Integer,False
+door_top_margin",Double,True
+door_bottom_margin",Double,True
+hinge_hole_space",Double,True
+inter_hinge_gap",Double,True
+hinge_hole_radius",Double,True
+hinge_hole_diameter",Double,True
+door_floor_clearance_desired",Double,False
+door_width_desired",Double,False
+door_height_desired",Double,False

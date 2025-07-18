@@ -11,10 +11,33 @@ using System.Text;
 
 namespace RevitFamilyToStl
 {
+    public class Door
+    {
+        [JsonProperty("door_id")]
+        public string DoorId { get; set; }
+
+        [JsonProperty("door_swing_direction_out")]
+        public int DoorSwingDirectionOut { get; set; }
+
+        [JsonProperty("door_hinge_side_relative_to_room_right")]
+        public int DoorHingeSideRelativeToRoomRight { get; set; }
+
+        [JsonProperty("door_floor_clearance_desired")]
+        public double DoorFloorClearanceDesired { get; set; }
+
+        [JsonProperty("door_width_desired")]
+        public double DoorWidthDesired { get; set; }
+
+        [JsonProperty("door_height_desired")]
+        public double DoorHeightDesired { get; set; }
+    }
+
     public class JsonInput
     {
         [JsonProperty("panels")]
         public List<Dictionary<string, object>> Panels { get; set; }
+        [JsonProperty("doors")]
+        public List<Door> Doors { get; set; }
     }
 
     [Transaction(TransactionMode.Manual)]
@@ -97,7 +120,54 @@ namespace RevitFamilyToStl
                     }
                 }
 
-                TaskDialog.Show("Success", $"{jsonInput.Panels.Count} panels processed successfully.");
+                // ===== Process Doors =====
+                if (jsonInput.Doors != null && jsonInput.Doors.Any())
+                {
+                    var doorFamilyPath = Path.Combine(inputDir, "3X8X_door_v5_2025_07_16.rfa");
+                    var doorSymbol = LoadAndGetFamilySymbol(doc, doorFamilyPath);
+                    if (doorSymbol != null)
+                    {
+                        foreach (var doorData in jsonInput.Doors)
+                        {
+                            FamilyInstance instance = null;
+                            using (var t = new Transaction(doc, $"Create and Setup Door {doorData.DoorId}"))
+                            {
+                                t.Start();
+                                instance = CreateFamilyInstance(doc, doorSymbol, XYZ.Zero);
+                                if (instance != null)
+                                {
+                                    // Set parameters (convert inches to feet for length values)
+                                    SetParameter(instance, "door_swing_direction_out", doorData.DoorSwingDirectionOut);
+                                    SetParameter(instance, "door_hinge_side_relative_to_room_right", doorData.DoorHingeSideRelativeToRoomRight);
+                                    SetParameter(instance, "door_floor_clearance_desired", doorData.DoorFloorClearanceDesired / 12.0);
+                                    SetParameter(instance, "door_width_desired", doorData.DoorWidthDesired / 12.0);
+                                    SetParameter(instance, "door_height_desired", doorData.DoorHeightDesired / 12.0);
+                                    doc.Regenerate();
+                                }
+                                t.Commit();
+                            }
+
+                            // Now perform exports, which use their own transactions, after the main transaction is complete.
+                            if (instance != null)
+                            {
+                                var stlPath = Path.Combine(outputDir, $"{doorData.DoorId}.stl");
+                                var csvPath = Path.Combine(outputDir, $"{doorData.DoorId}_parameters.csv");
+                                ExportToStl(doc, instance, stlPath);
+                                ExportParametersToCsv(instance, csvPath);
+
+                                // Clean up the instance in a final, separate transaction
+                                using (var tClean = new Transaction(doc, "Clean up door instance"))
+                                {
+                                    tClean.Start();
+                                    doc.Delete(instance.Id);
+                                    tClean.Commit();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                TaskDialog.Show("Success", $"{jsonInput.Panels.Count} panels and {jsonInput.Doors?.Count ?? 0} doors processed successfully.");
                 return Result.Succeeded;
             }
             catch (Exception ex)
@@ -105,6 +175,39 @@ namespace RevitFamilyToStl
                 message = $"An error occurred: {ex.ToString()}";
                 TaskDialog.Show("Error", message);
                 return Result.Failed;
+            }
+        }
+
+        private FamilyInstance CreateFamilyInstance(Document doc, FamilySymbol symbol, XYZ location)
+        {
+            if (!symbol.IsActive)
+            {
+                symbol.Activate();
+                doc.Regenerate();
+            }
+            return doc.Create.NewFamilyInstance(location, symbol, Autodesk.Revit.DB.Structure.StructuralType.NonStructural);
+        }
+
+        private void SetParameter(FamilyInstance instance, string paramName, object value)
+        {
+            Parameter param = instance.LookupParameter(paramName);
+            if (param != null && !param.IsReadOnly)
+            {
+                switch (value)
+                {
+                    case int i:
+                        param.Set(i);
+                        break;
+                    case double d:
+                        param.Set(d);
+                        break;
+                    case string s:
+                        param.Set(s);
+                        break;
+                    case bool b:
+                        param.Set(b ? 1 : 0);
+                        break;
+                }
             }
         }
 
@@ -223,6 +326,59 @@ namespace RevitFamilyToStl
                 csv.AppendLine($"{Quote(name)},{Quote(value)}");
             }
 
+            File.WriteAllText(filePath, csv.ToString());
+        }
+
+        private void ExportParametersToCsv(FamilyInstance instance, string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+
+            var csv = new StringBuilder();
+            csv.AppendLine("Parameter Name,Value,Storage Type,Is Read-Only");
+
+            foreach (Parameter param in instance.Parameters)
+            {
+                if (param == null) continue;
+
+                string paramValue;
+                try
+                {
+                    if (param.StorageType == StorageType.String)
+                    {
+                        paramValue = param.AsString();
+                    }
+                    else
+                    {
+                        paramValue = param.AsValueString(); // More generic for non-string types
+                        if (string.IsNullOrEmpty(paramValue))
+                        {
+                            // Fallback for some types like doubles
+                            switch (param.StorageType)
+                            {
+                                case StorageType.Double:
+                                    paramValue = param.AsDouble().ToString();
+                                    break;
+                                case StorageType.Integer:
+                                    paramValue = param.AsInteger().ToString();
+                                    break;
+                                case StorageType.ElementId:
+                                    paramValue = param.AsElementId().Value.ToString();
+                                    break;
+                            }
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    paramValue = "Error reading value";
+                }
+
+                string line = $"{Quote(param.Definition.Name)},{Quote(paramValue ?? "null")},{param.StorageType},{param.IsReadOnly}";
+                csv.AppendLine(line);
+            }
             File.WriteAllText(filePath, csv.ToString());
         }
 
