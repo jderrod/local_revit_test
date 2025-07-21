@@ -32,5 +32,21 @@
       "door_width_desired": 36.0,
       "door_height_desired": 84.0
     }
+  ],
+  "stiles": [
+    {
+      "stile_id": "S1",
+      "stile_height": 84.0,
+      "stile_width": 36.0,
+      "stile_left_side_function": "hinging_inswing",
+      "stile_left_side_adjacent_door_floor_clearance": 1.0,
+      "stile_left_side_adjacent_door_height": 84.0,
+      "stile_right_side_function": "none",
+      "stile_right_side_adjacent_door_floor_clearance": 1.0,
+      "stile_right_side_adjacent_door_height": 84.0,
+      "stile_work_order_number": "STILE9876543",
+      "stile_component_id": "S123",
+      "stile_series_id": "3086G"
+    }
   ]
 }

@@ -38,6 +38,47 @@ namespace RevitFamilyToStl
         public List<Dictionary<string, object>> Panels { get; set; }
         [JsonProperty("doors")]
         public List<Door> Doors { get; set; }
+        [JsonProperty("stiles")]
+        public List<Stile> Stiles { get; set; }
+    }
+
+    public class Stile
+    {
+        [JsonProperty("stile_id")]
+        public string StileId { get; set; }
+
+        [JsonProperty("stile_height")]
+        public double StileHeight { get; set; }
+
+        [JsonProperty("stile_width")]
+        public double StileWidth { get; set; }
+
+        [JsonProperty("stile_left_side_function")]
+        public string StileLeftSideFunction { get; set; }
+
+        [JsonProperty("stile_left_side_adjacent_door_floor_clearance")]
+        public double StileLeftSideAdjacentDoorFloorClearance { get; set; }
+
+        [JsonProperty("stile_left_side_adjacent_door_height")]
+        public double StileLeftSideAdjacentDoorHeight { get; set; }
+
+        [JsonProperty("stile_right_side_function")]
+        public string StileRightSideFunction { get; set; }
+
+        [JsonProperty("stile_right_side_adjacent_door_floor_clearance")]
+        public double StileRightSideAdjacentDoorFloorClearance { get; set; }
+
+        [JsonProperty("stile_right_side_adjacent_door_height")]
+        public double StileRightSideAdjacentDoorHeight { get; set; }
+
+        [JsonProperty("stile_work_order_number")]
+        public string StileWorkOrderNumber { get; set; }
+
+        [JsonProperty("stile_component_id")]
+        public string StileComponentId { get; set; }
+
+        [JsonProperty("stile_series_id")]
+        public string StileSeriesId { get; set; }
     }
 
     [Transaction(TransactionMode.Manual)]
@@ -167,7 +208,58 @@ namespace RevitFamilyToStl
                     }
                 }
 
-                TaskDialog.Show("Success", $"{jsonInput.Panels.Count} panels and {jsonInput.Doors?.Count ?? 0} doors processed successfully.");
+                // ===== Process Stiles =====
+                if (jsonInput.Stiles != null && jsonInput.Stiles.Any())
+                {
+                    var stileFamilyPath = Path.Combine(inputDir, "3X8X_stile_v2_2025_07_17.rfa");
+                    var stileSymbol = LoadAndGetFamilySymbol(doc, stileFamilyPath);
+                    if (stileSymbol != null)
+                    {
+                        foreach (var stileData in jsonInput.Stiles)
+                        {
+                            FamilyInstance instance = null;
+                            using (var t = new Transaction(doc, $"Create and Setup Stile {stileData.StileId}"))
+                            {
+                                t.Start();
+                                instance = CreateFamilyInstance(doc, stileSymbol, XYZ.Zero);
+                                if (instance != null)
+                                {
+                                    // Set parameters (convert inches to feet for length values)
+                                    SetParameter(instance, "stile_height_desired", stileData.StileHeight / 12.0);
+                                    SetParameter(instance, "stile_width_desired", stileData.StileWidth / 12.0);
+                                    SetParameter(instance, "stile_left_side_function", stileData.StileLeftSideFunction);
+                                    SetParameter(instance, "stile_left_side_adjacent_door_floor_clearance_desired", stileData.StileLeftSideAdjacentDoorFloorClearance / 12.0);
+                                    SetParameter(instance, "stile_left_side_adjacent_door_height_desired", stileData.StileLeftSideAdjacentDoorHeight / 12.0);
+                                    SetParameter(instance, "stile_right_side_function", stileData.StileRightSideFunction);
+                                    SetParameter(instance, "stile_right_side_adjacent_door_floor_clearance_desired", stileData.StileRightSideAdjacentDoorFloorClearance / 12.0);
+                                    SetParameter(instance, "stile_right_side_adjacent_door_height_desired", stileData.StileRightSideAdjacentDoorHeight / 12.0);
+                                    SetParameter(instance, "stile_work_order_number", stileData.StileWorkOrderNumber);
+                                    SetParameter(instance, "stile_component_id", stileData.StileComponentId);
+                                    SetParameter(instance, "stile_series_id", stileData.StileSeriesId);
+                                    doc.Regenerate();
+                                }
+                                t.Commit();
+                            }
+
+                            if (instance != null)
+                            {
+                                var stlPath = Path.Combine(outputDir, $"{stileData.StileId}.stl");
+                                var jsonPath = Path.Combine(outputDir, $"{stileData.StileId}_parameters.json");
+                                ExportToStl(doc, instance, stlPath);
+                                ExportParametersToJson(instance, jsonPath);
+
+                                using (var tClean = new Transaction(doc, "Clean up stile instance"))
+                                {
+                                    tClean.Start();
+                                    doc.Delete(instance.Id);
+                                    tClean.Commit();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                TaskDialog.Show("Success", $"{jsonInput.Panels.Count} panels, {jsonInput.Doors?.Count ?? 0} doors, and {jsonInput.Stiles?.Count ?? 0} stiles processed successfully.");
                 return Result.Succeeded;
             }
             catch (Exception ex)
