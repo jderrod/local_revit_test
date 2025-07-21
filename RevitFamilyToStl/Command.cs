@@ -80,7 +80,7 @@ namespace RevitFamilyToStl
                     {
                         string panelId = panelData.ContainsKey("panel_id") ? panelData["panel_id"].ToString() : Guid.NewGuid().ToString();
                         var stlFilePath = Path.Combine(outputDir, $"{panelId}.stl");
-                        var csvFilePath = Path.Combine(outputDir, $"{panelId}_parameters.csv");
+                        var jsonOutputPath = Path.Combine(outputDir, $"{panelId}_parameters.json");
 
                         // ===== Create Instance Transaction =====
                         FamilyInstance instance;
@@ -100,10 +100,10 @@ namespace RevitFamilyToStl
                         if (instance == null) throw new InvalidOperationException($"Failed to retrieve instance {panelId}.");
 
                         if (File.Exists(stlFilePath)) File.Delete(stlFilePath);
-                        if (File.Exists(csvFilePath)) File.Delete(csvFilePath);
+                        if (File.Exists(jsonOutputPath)) File.Delete(jsonOutputPath);
 
                         ExportToStl(doc, instance, stlFilePath);
-                        ExportToCsv(instance, csvFilePath);
+                        ExportParametersToJson(instance, jsonOutputPath);
                     }
                     finally
                     {
@@ -151,9 +151,9 @@ namespace RevitFamilyToStl
                             if (instance != null)
                             {
                                 var stlPath = Path.Combine(outputDir, $"{doorData.DoorId}.stl");
-                                var csvPath = Path.Combine(outputDir, $"{doorData.DoorId}_parameters.csv");
+                                var jsonPath = Path.Combine(outputDir, $"{doorData.DoorId}_parameters.json");
                                 ExportToStl(doc, instance, stlPath);
-                                ExportParametersToCsv(instance, csvPath);
+                                ExportParametersToJson(instance, jsonPath);
 
                                 // Clean up the instance in a final, separate transaction
                                 using (var tClean = new Transaction(doc, "Clean up door instance"))
@@ -305,84 +305,46 @@ namespace RevitFamilyToStl
             }
         }
 
-        private void ExportToCsv(FamilyInstance instance, string filePath)
+        private void ExportParametersToJson(FamilyInstance instance, string filePath)
         {
-            var csv = new StringBuilder();
-            csv.AppendLine("Parameter Name,Parameter Value");
+            if (instance == null) return;
 
-            foreach (Parameter param in instance.Parameters)
+            var parametersDict = new Dictionary<string, object>();
+            var parameters = instance.GetOrderedParameters();
+
+            foreach (var param in parameters)
             {
-                if (param == null || !param.HasValue) continue;
-                var name = param.Definition.Name;
-                string value;
-                if (param.StorageType == StorageType.Double)
+                if (param.Definition != null)
                 {
-                    value = param.AsValueString() ?? UnitUtils.ConvertFromInternalUnits(param.AsDouble(), param.GetUnitTypeId()).ToString();
-                }
-                else
-                {
-                    value = param.AsValueString() ?? param.AsString() ?? "(No Value)";
-                }
-                csv.AppendLine($"{Quote(name)},{Quote(value)}");
-            }
+                    string paramName = param.Definition.Name;
+                    object paramValue = null;
 
-            File.WriteAllText(filePath, csv.ToString());
-        }
-
-        private void ExportParametersToCsv(FamilyInstance instance, string filePath)
-        {
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-
-            var csv = new StringBuilder();
-            csv.AppendLine("Parameter Name,Value,Storage Type,Is Read-Only");
-
-            foreach (Parameter param in instance.Parameters)
-            {
-                if (param == null) continue;
-
-                string paramValue;
-                try
-                {
-                    if (param.StorageType == StorageType.String)
+                    if (param.HasValue)
                     {
-                        paramValue = param.AsString();
-                    }
-                    else
-                    {
-                        paramValue = param.AsValueString(); // More generic for non-string types
-                        if (string.IsNullOrEmpty(paramValue))
+                        switch (param.StorageType)
                         {
-                            // Fallback for some types like doubles
-                            switch (param.StorageType)
-                            {
-                                case StorageType.Double:
-                                    paramValue = param.AsDouble().ToString();
-                                    break;
-                                case StorageType.Integer:
-                                    paramValue = param.AsInteger().ToString();
-                                    break;
-                                case StorageType.ElementId:
-                                    paramValue = param.AsElementId().Value.ToString();
-                                    break;
-                            }
+                            case StorageType.Double:
+                                paramValue = param.AsDouble();
+                                break;
+                            case StorageType.String:
+                                paramValue = param.AsString();
+                                break;
+                            case StorageType.Integer:
+                                paramValue = param.AsInteger();
+                                break;
+                            case StorageType.ElementId:
+                                paramValue = param.AsElementId().Value;
+                                break;
                         }
                     }
+                    parametersDict[paramName] = paramValue;
                 }
-                catch (Exception)
-                {
-                    paramValue = "Error reading value";
-                }
-
-                string line = $"{Quote(param.Definition.Name)},{Quote(paramValue ?? "null")},{param.StorageType},{param.IsReadOnly}";
-                csv.AppendLine(line);
             }
-            File.WriteAllText(filePath, csv.ToString());
-        }
 
-        private string Quote(string s) => $"\"{s.Replace("\"", "\"\"")}\"";
+            string json = JsonConvert.SerializeObject(parametersDict, Formatting.Indented);
+            if (File.Exists(filePath)) File.Delete(filePath);
+            File.WriteAllText(filePath, json);
+        }
 
         private class TemporaryViewModeDisabler : IDisposable
         {
