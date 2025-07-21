@@ -28,7 +28,7 @@
       "door_id": "D1",
       "door_swing_direction_out": 1,
       "door_hinge_side_relative_to_room_right": 1,
-      "door_floor_clearance_desired": 0.75,
+      "door_floor_clearance_desired": 1.0,
       "door_width_desired": 36.0,
       "door_height_desired": 84.0
     }
